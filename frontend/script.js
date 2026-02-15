@@ -7,21 +7,17 @@ const resultArea = document.getElementById('resultArea');
 const errorArea = document.getElementById('errorArea');
 
 // Dynamic Elements
-const flagDisplay = document.querySelector('#flagDisplay');
-const countryName = document.querySelector('h2#countryName');
+// Dynamic Elements
+const countryName = document.getElementById('countryName');
 const codeDisplay = document.getElementById('codeDisplay');
 const carrierDisplay = document.getElementById('carrierDisplay');
 const nameDisplay = document.getElementById('nameDisplay');
+const typeDisplay = document.getElementById('typeDisplay');
 
 // New "Practical" Fields
 const stateRow = document.getElementById('stateRow');
 const stateDisplay = document.getElementById('stateDisplay');
-const confidenceValue = document.getElementById('confidenceValue');
-const confidenceBadge = document.getElementById('confidenceBadge');
-
-// We need a place to show Type & Timezone
-// Let's create these dynamically if they don't exist in HTML yet, 
-// OR simpler: repurpose the "Name" area for AI Lookup.
+// flagDisplay, confidenceBadge are removed or not used dynamically in same way
 
 async function identifyCountry(isDeepSearch = false) {
     const rawInput = inputElement.value.trim();
@@ -54,88 +50,52 @@ async function identifyCountry(isDeepSearch = false) {
         const data = await response.json();
 
         if (data.success) {
-            // 1. Basic Info
+            // Populate Fields
             countryName.textContent = data.country || "Unknown";
-            flagDisplay.textContent = data.flag || "🌍";
-            codeDisplay.textContent = data.formatted || data.code; // Use formatted number if available
+            codeDisplay.textContent = data.formatted || data.code;
 
-            // 2. Carrier (Show if available, else standard text)
+            // Carrier
             if (data.carrier && data.carrier !== "N/A") {
-                carrierDisplay.textContent = data.carrier;
-                carrierDisplay.parentElement.classList.remove('hidden');
+                carrierDisplay.textContent = data.carrier.toUpperCase();
             } else {
-                carrierDisplay.textContent = "Unknown Carrier";
+                carrierDisplay.textContent = "UNKNOWN";
             }
 
-            // 3. NAME FIELD LOGIC (Crucial for "Practicality")
-            const nameRow = nameDisplay.parentElement; // The flex container
+            // Line Type
+            if (typeDisplay) {
+                typeDisplay.textContent = data.type ? data.type.toUpperCase() : "UNKNOWN";
+            }
+
+            // Identity (Name) Logic
+            const nameRow = document.getElementById('nameRow');
 
             if (isDeepSearch) {
-                // Truecaller Mode: Show Name explicitly
                 nameRow.classList.remove('hidden');
-                document.querySelector('#nameLabel').textContent = "Name:";
 
-                // Prioritize showing the Full Name if available (e.g. from Verified DB or Truecaller)
                 if (data.name && data.name !== "N/A" && !data.name.includes("Login")) {
                     nameDisplay.textContent = data.name;
                     nameDisplay.className = "text-green-400 font-bold";
                 } else {
-                    // Fallback to "Verified User" look for unknown numbers
-                    // This looks cleaner than "Not Found" or "Masked"
+                    // Verified User Fallback
                     const prefix = (data.carrier && data.carrier !== "N/A" && data.carrier !== "Unknown Carrier")
                         ? `${data.carrier.split(' ')[0]} User`
                         : "Verified User";
-
-                    nameDisplay.innerHTML = `${prefix} <span class="text-green-500">✓</span>`;
-                    nameDisplay.className = "text-gray-200 font-bold";
+                    nameDisplay.innerHTML = `${prefix} <span class="text-xs bg-green-900 text-green-300 px-1 rounded ml-2">VERIFIED</span>`;
+                    nameDisplay.className = "text-slate-200 font-bold flex items-center";
                 }
             } else {
-                // AI Mode: HIDE Name, Show useful technical info instead
-                // Reuse the row for "Type" or just hide it?
-                // Better: repurpose it to show "Line Type"
-
-                if (data.type && data.type !== "Unknown") {
-                    nameRow.classList.remove('hidden');
-                    document.querySelector('#nameLabel').textContent = "Type:";
-                    nameDisplay.textContent = data.type; // e.g., "Mobile", "Landline"
-                    nameDisplay.className = "text-yellow-300 font-mono";
-                    nameDisplay.onclick = null; // Remove click handler
-                } else {
-                    nameRow.classList.add('hidden');
-                }
+                nameRow.classList.add('hidden');
             }
 
-            // 4. Region / State (Practical!)
-            if (data.state && data.state !== "Entire Country" && data.state !== "N/A" && data.state !== "Unknown Region") {
+            // Region / State
+            if (data.state && data.state !== "Entire Country" && data.state !== "N/A") {
                 stateDisplay.textContent = data.state;
                 stateRow.classList.remove('hidden');
             } else {
                 stateRow.classList.add('hidden');
             }
 
-            // 5. Timezone (New Practical Feature - Append to State or show below)
-            // Let's append to state if available
-            if (data.timezone && data.timezone !== "Unknown" && data.timezone !== "N/A") {
-                // Create a tooltip or small text?
-                // Let's add it to codeDisplay area for now or just log it.
-                // Actually, let's append validation status to code display
-                const validIcon = data.valid ? "✅" : "⚠️";
-                codeDisplay.innerHTML = `${data.formatted} <span class="text-gray-500 text-xs ml-2" title="Timezone: ${data.timezone}">${validIcon} ${data.valid ? "Valid" : "Check Format"}</span>`;
-            }
-
-            // Confidence
-            const score = Math.round(data.confidence * 100);
-            confidenceValue.textContent = score + "%";
-            if (score > 80) confidenceBadge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200";
-            else confidenceBadge.className = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-900 text-yellow-200";
-
             resultArea.classList.remove('hidden');
-
-            // Error Handling for Deep Search - HIDDEN as per user request
-            // if (data.truecaller_error && isDeepSearch) {
-            //     errorMessage.innerHTML = `<strong>Truecaller Error:</strong> ${data.truecaller_error}`;
-            //     errorArea.classList.remove('hidden');
-            // }
 
         } else {
             throw new Error(data.message || "Identification failed.");
@@ -159,3 +119,50 @@ async function identifyCountry(isDeepSearch = false) {
 btn.addEventListener('click', () => identifyCountry(false));
 tcBtn.addEventListener('click', () => identifyCountry(true));
 inputElement.addEventListener('keypress', (e) => e.key === 'Enter' && identifyCountry(false));
+
+// Contact Form Logic
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+    contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('contactName').value;
+        const email = document.getElementById('contactEmail').value;
+        const message = document.getElementById('contactMessage').value;
+        const btn = document.getElementById('contactSubmitBtn');
+        const status = document.getElementById('contactStatus');
+
+        // Loading State
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...`;
+
+        try {
+            const resp = await fetch('http://localhost:8000/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, message })
+            });
+
+            if (resp.ok) {
+                status.textContent = "Message sent successfully! We'll get back to you soon.";
+                status.className = "text-center text-sm font-medium p-3 rounded bg-green-900/30 text-green-400 border border-green-800 animate-fade-in";
+                contactForm.reset();
+            } else {
+                throw new Error("Failed to send");
+            }
+        } catch (err) {
+            status.textContent = "Error sending message. Please try again.";
+            status.className = "text-center text-sm font-medium p-3 rounded bg-red-900/30 text-red-400 border border-red-800 animate-fade-in";
+        } finally {
+            status.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+
+            // Hide status after 5s
+            setTimeout(() => {
+                status.classList.add('hidden');
+            }, 5000);
+        }
+    });
+}
