@@ -1,0 +1,13 @@
+
+fastapi
+uvicorn
+phonenumbers
+pycountry
+thefuzz
+python-levenshtein
+pydantic
+scikit-learn
+numpy
+joblib
+truecallerpy
+requests

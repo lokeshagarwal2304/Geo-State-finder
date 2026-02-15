@@ -1,0 +1,15 @@
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.idea/
+.vscode/
+*.log
+truecaller_auth.json
+last_login_attempt.json
+otp_response.json

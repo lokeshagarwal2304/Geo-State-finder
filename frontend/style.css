@@ -1,0 +1,29 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.font-inter {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+#resultArea {
+    background: rgba(30, 41, 59, 0.4);
+    backdrop-filter: blur(8px);
+}
